@@ -1,3 +1,11 @@
+# Repo-specific
+log.txt
+test-commands.txt
+.editorconfig
+.vscode/
+*.csv
+*.pyc
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

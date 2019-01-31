@@ -33,15 +33,13 @@ def upload_csv(access_token, filepath):
 
                 if not str(row['Calulate Pace']).isdigit():
                     # TODO: help the user out
-                    logger("Skipping {} due to bad csv encoding".format(activityID))
+                    logger("{} - SKIPPED - bad csv encoding".format(activityID))
                     continue
 
                 if activityID not in log:
-                    logger("Manually uploading " + activityID)
-
                     seconds = utils.seconds_for_hms(0, row['Minutes'], row['Seconds'])
                     meters = utils.distance_in_meters(row['Distance'], row['Unit'])
-                    starttime = datetime.strptime(str(row['Date']),"%m/%d/%y")
+                    starttime = datetime.strptime(str(row['Date']),"%Y-%m-%d")
                     # TODO: allow start time to be configured as setting
 
                     description = row['Notes']
@@ -56,7 +54,7 @@ def upload_csv(access_token, filepath):
                         activity_counter += 1
 
                         upload = client.create_activity(
-                            name = row['Name'] + " (Flotrackr entry)",
+                            name = "Flotrackr - " + row['Name'],
                             start_date_local = starttime,
                             elapsed_time = seconds,
                             distance = meters,
@@ -64,15 +62,15 @@ def upload_csv(access_token, filepath):
                             activity_type = activity_type
                         )
 
-                        logger("Manually created " + activityID)
+                        logger(activityID + " - UPLOADED")
 
                     except ValueError as err:
                         # strava doesn't return a response body if user has Activity privacy to set "Only Me"
                         # which causes the stravalib to throw an exception
-                        logger("ValueError: {}".format(err))
+                        logger(activityID + " - UPLOADED - ValueError: {}".format(err))
 
-            except ValueError as err:
-                logger("Skipping {0} due to ValueError: {1}".format(activityID, err))
+            except Exception as err:
+                logger("{0} - SKIPPED - Exception: {1}".format(activityID, err))
 
         logger("Complete! Uploaded " + str(activity_counter) + " activities.")
         return "Complete! Uploaded " + str(activity_counter) + " activities."

@@ -26,13 +26,15 @@ def upload_csv(access_token, filepath):
 
     with open(filepath, encoding = "ISO-8859-1") as csvfile:
         activities = csv.DictReader(csvfile, skipinitialspace=True)
-        activity_counter = 0
+        activity_count = 0
+        upload_count = 0
+
         for row in activities:
             try:
-                activityID = "ID_" + row['Date'] + '_' + row['Name']
+                activity_count += 1
+                activityID = utils.id_from_row(row)
 
                 if not str(row['Calulate Pace']).isdigit():
-                    # TODO: help the user out
                     logger("{} - SKIPPED - bad csv encoding".format(activityID))
                     continue
 
@@ -40,7 +42,6 @@ def upload_csv(access_token, filepath):
                     seconds = utils.seconds_for_hms(0, row['Minutes'], row['Seconds'])
                     meters = utils.distance_in_meters(row['Distance'], row['Unit'])
                     starttime = datetime.strptime(str(row['Date']),"%Y-%m-%d")
-                    # TODO: allow start time to be configured as setting
 
                     # replace badly encoded apostrophes
                     description = row['Notes'].replace("Ã¢ÂÂ","'").replace("â","'")
@@ -53,8 +54,6 @@ def upload_csv(access_token, filepath):
                         activity_type = utils.parse_activity_type(row['Cross Train Type'])
 
                     try:
-                        activity_counter += 1
-
                         upload = client.create_activity(
                             name = "Flotrackr - " + row['Name'],
                             start_date_local = starttime,
@@ -64,6 +63,7 @@ def upload_csv(access_token, filepath):
                             activity_type = activity_type
                         )
 
+                        upload_count += 1
                         logger(activityID + " - UPLOADED")
 
                     except ValueError as err:
@@ -71,13 +71,13 @@ def upload_csv(access_token, filepath):
                             # strava doesn't return a response body if user has Activity privacy to set "Only Me"
                             # which causes the stravalib to throw an exception
                             logger(activityID + " - UPLOADED - Activities privacy likely set to Only Me - ValueError: {}".format(err))
+                            upload_count += 1
                         else:
                             logger(activityID + " - MAYBE FAILED - ValueError: {}".format(err))
 
             except Exception as err:
                 logger("{0} - SKIPPED - Exception: {1}".format(activityID, err))
 
-        logger("Complete! Uploaded " + str(activity_counter) + " activities.")
-        return "Complete! Uploaded " + str(activity_counter) + " activities."
-
+        logger("COMPLETE - uploaded " + str(upload_count) + " of " + str(activity_count) + " activities")
+        return "COMPLETE - uploaded " + str(upload_count) + " of " + str(activity_count) + " activities"
 

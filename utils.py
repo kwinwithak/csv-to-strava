@@ -1,3 +1,6 @@
+def id_from_row(row):
+    return "id_" + row['Date'] + '_' + row['Name'].replace(" ", "_")
+
 def distance_in_meters(value, unit):
     if not value or not unit:
         return 0

@@ -25,7 +25,7 @@ def upload_csv(access_token, filepath):
     logger("Beginning csv upload for " + athlete.firstname + " " + athlete.lastname)
 
     with open(filepath, encoding = "ISO-8859-1") as csvfile:
-        activities = csv.DictReader(csvfile)
+        activities = csv.DictReader(csvfile, skipinitialspace=True)
         activity_counter = 0
         for row in activities:
             try:
@@ -42,7 +42,9 @@ def upload_csv(access_token, filepath):
                     starttime = datetime.strptime(str(row['Date']),"%Y-%m-%d")
                     # TODO: allow start time to be configured as setting
 
-                    description = row['Notes']
+                    # replace badly encoded apostrophes
+                    description = row['Notes'].replace("Ã¢ÂÂ","'").replace("â","'")
+
                     if row['Feel']:
                         description += "\n\n" + "Feel: " + row['Feel'] + " out of 5"
 
@@ -65,9 +67,12 @@ def upload_csv(access_token, filepath):
                         logger(activityID + " - UPLOADED")
 
                     except ValueError as err:
-                        # strava doesn't return a response body if user has Activity privacy to set "Only Me"
-                        # which causes the stravalib to throw an exception
-                        logger(activityID + " - UPLOADED - ValueError: {}".format(err))
+                        if str(err) == "Expecting value: line 1 column 1 (char 0)":
+                            # strava doesn't return a response body if user has Activity privacy to set "Only Me"
+                            # which causes the stravalib to throw an exception
+                            logger(activityID + " - UPLOADED - Activities privacy likely set to Only Me - ValueError: {}".format(err))
+                        else:
+                            logger(activityID + " - MAYBE FAILED - ValueError: {}".format(err))
 
             except Exception as err:
                 logger("{0} - SKIPPED - Exception: {1}".format(activityID, err))
